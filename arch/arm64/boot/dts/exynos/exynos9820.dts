@@ -5804,7 +5804,7 @@
 					type = "active";
 				};
 				mid_control_temp: mid-control-temp {
-					temperature = <83000>; /* millicelsius */
+					temperature = <75000>; /* millicelsius */
 					hysteresis = <3000>; /* millicelsius */
 					type = "passive";
 				};
