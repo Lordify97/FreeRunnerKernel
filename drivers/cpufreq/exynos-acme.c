@@ -1313,7 +1313,7 @@ static int init_dm(struct exynos_cpufreq_domain *domain,
 #ifdef CONFIG_ARM_MODCLOCK
 
 /*Little cores*/
-static unsigned long arg_cpu_max_c1 = CONFIG_MAX_FREQ_LITTLE;
+unsigned long arg_cpu_max_c1 = CONFIG_MAX_FREQ_LITTLE;
 static int __init cpufreq_read_cpu_max_c1(char *cpu_max_c1)
 {
 	unsigned long ui_khz;
@@ -1366,7 +1366,7 @@ __setup("cpu_max_c3=", cpufreq_read_cpu_max_c3);
 
 /*Srarting Underclock..*/
 /*Little cores*/
-static unsigned long arg_cpu_min_c1 = CONFIG_MIN_FREQ_LITTLE;
+unsigned long arg_cpu_min_c1 = CONFIG_MIN_FREQ_LITTLE;
 static int __init cpufreq_read_cpu_min_c1(char *cpu_min_c1)
 {
 	unsigned long ui_khz;
