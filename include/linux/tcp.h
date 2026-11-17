@@ -289,6 +289,11 @@ struct tcp_sock {
 		   reord:1;	 /* reordering detected */
 	} rack;
 	u16	advmss;		/* Advertised MSS			*/
+	u8	compressed_ack;
+	u8	dup_ack_counter:2,
+		/* tlp_retrans:1,	 TLP is a retransmission */
+		fast_ack_mode:2, /* which fast ack mode ? */
+		unused:3;
 	u8	tlp_retrans:1,	/* TLP is a retransmission */
 		unused_1:7;
 	u32	chrono_start;	/* Start time in jiffies of a TCP chrono */
@@ -296,11 +301,12 @@ struct tcp_sock {
 	u8	chrono_type:2,	/* current chronograph type */
 		rate_app_limited:1,  /* rate_{delivered,interval_us} limited? */
 		fastopen_connect:1, /* FASTOPEN_CONNECT sockopt */
+		fastopen_no_cookie:1, /* Allow send/recv SYN+data without a cookie */
 		is_sack_reneg:1,    /* in recovery from loss with SACK reneg? */
-		unused:3;
+		fastopen_client_fail:2; /* reason why fastopen failed */
 	u8	nonagle     : 4,/* Disable Nagle algorithm?             */
 		thin_lto    : 1,/* Use linear timeouts for thin streams */
-		unused1	    : 1,
+		recvmsg_inq : 1,/* Indicate # of bytes in queue upon recvmsg */
 		repair      : 1,
 		frto        : 1;/* F-RTO (RFC5682) activated in CA_Loss */
 	u8	repair_queue;
@@ -312,8 +318,10 @@ struct tcp_sock {
 		syn_data_acked:1,/* data in SYN is acked by SYN-ACK */
 		is_cwnd_limited:1;/* forward progress limited by snd_cwnd? */
 	u32	tlp_high_seq;	/* snd_nxt at the time of TLP */
-
+        
+        u32	tcp_tx_delay;	/* delay (in usec) added to TX packets */
 	u64	tcp_wstamp_ns;	/* departure time for next sent data packet */
+	u64	tcp_clock_cache; /* cache last tcp_clock_ns() (see tcp_mstamp_refresh()) */
 
 /* RTT measurement */
 	u64	tcp_mstamp;	/* most recent packet received/sent */
@@ -334,6 +342,7 @@ struct tcp_sock {
 	u8	keepalive_probes; /* num of allowed keep alive probes	*/
 	u32	reordering;	/* Packet reordering metric.		*/
 	u32	snd_up;		/* Urgent pointer		*/
+	u32	reord_seen;	/* number of data packet reordering events */
 
 /*
  *      Options received (usually on last packet, some only on SYN packets).
@@ -371,6 +380,7 @@ struct tcp_sock {
 	u32	fackets_out;	/* FACK'd packets			*/
 
 	struct hrtimer	pacing_timer;
+	struct hrtimer	compressed_ack_timer;
 
 	/* from STCP, retrans queue hinting */
 	struct sk_buff* lost_skb_hint;
@@ -436,8 +446,13 @@ struct tcp_sock {
 #define BPF_SOCK_OPS_TEST_FLAG(TP, ARG) 0
 #endif
 
+u16 timeout_rehash;	/* Timeout-triggered rehash attempts */
+
+	u32 rcv_ooopack; /* Received out-of-order packets, for tcpinfo */
+
 /* Receiver side RTT estimation */
 	struct {
+	         u32 rcv_rtt_last_tsecr;
 		u32	rtt_us;
 		u32	seq;
 		u64	time;
@@ -462,6 +477,13 @@ struct tcp_sock {
 	bool	syn_smc;	/* SYN includes SMC */
 #endif
 
+#if IS_ENABLED(CONFIG_MPTCP)
+	bool	is_mptcp;
+#endif
+#if IS_ENABLED(CONFIG_SMC)
+	bool	syn_smc;	/* SYN includes SMC */
+#endif 
+
 #ifdef CONFIG_TCP_MD5SIG
 /* TCP AF-Specific parts; only used by MD5 Signature support so far */
 	const struct tcp_sock_af_ops	*af_specific;
@@ -477,6 +499,8 @@ struct tcp_sock {
 	 */
 	struct request_sock __rcu *fastopen_rsk;
 	struct saved_syn *saved_syn;
+	/* Rerouting information */
+	u16	ecn_rehash;	/* PLB triggered rehash attempts */
 #ifdef CONFIG_MPTCP
 	/* MPTCP/TCP-specific callbacks */
 	const struct tcp_sock_ops	*ops;
@@ -515,6 +539,8 @@ struct tcp_sock {
 	char		mptcp_pm_name[MPTCP_PM_NAME_MAX];
 #endif /* CONFIG_MPTCP */
 };
+
+
 
 enum tsq_enum {
 	TSQ_THROTTLED,
@@ -624,4 +650,15 @@ int tcp_skb_shift(struct sk_buff *to, struct sk_buff *from, int pcount,
 
 int tcp_sock_set_keepidle_locked(struct sock *sk, int val);
 int tcp_sock_set_keepidle(struct sock *sk, int val);
+
+void tcp_sock_set_cork(struct sock *sk, bool on);
+int tcp_sock_set_keepcnt(struct sock *sk, int val);
+int tcp_sock_set_keepidle_locked(struct sock *sk, int val);
+int tcp_sock_set_keepidle(struct sock *sk, int val);
+int tcp_sock_set_keepintvl(struct sock *sk, int val);
+void tcp_sock_set_nodelay(struct sock *sk);
+void tcp_sock_set_quickack(struct sock *sk, int val);
+int tcp_sock_set_syncnt(struct sock *sk, int val);
+void tcp_sock_set_user_timeout(struct sock *sk, u32 val);
+
 #endif	/* _LINUX_TCP_H */
