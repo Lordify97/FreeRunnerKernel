@@ -1,4 +1,4 @@
 [submodule "KazeSU"]
 	path = KernelSU
-	url = git@github.com:LeDrew2017/KazeSU.git
+	url = https://github.com/LeDrew2017/KazeSU
 	branch = legacy
