@@ -7,7 +7,7 @@ KERNEL_DIR="$(pwd)"
 OUT_BASE="$KERNEL_DIR/out"
 AK3_DIR="$KERNEL_DIR/AnyKernel"
 AK3_REPO="https://github.com/Lordify97/Anykernel.git"
-TOOLCHAIN_DIR="/home/jay/infinity/prebuilts/clang/host/linux-x86/clang-r584948b"
+TOOLCHAIN_DIR="/home/$USER/Android/ToolChain/ZyClang-23/"
 GITHUB_REPO="git@github.com:LeDrew2017/FreeRunnerKernel.git"
 RELEASE_DIR="$KERNEL_DIR/releases"
 
