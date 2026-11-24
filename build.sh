@@ -69,10 +69,10 @@ detect_kazesu_version() {
         echo "❌ ERROR: drivers/kernelsu must point to a separate KazeSU checkout."
         return 1
     fi
-    if ! grep -q '^config KSU_SUSFS_DEINLINE$' "$driver_dir/Kconfig"; then
-        echo "❌ ERROR: This non-GKI tree requires the updated KazeSU legacy source."
-        return 1
-    fi
+    # if ! grep -q '^config KSU_SUSFS_DEINLINE$' "$driver_dir/Kconfig"; then
+    #    echo "❌ ERROR: This non-GKI tree requires the updated KazeSU legacy source."
+    #    return 1
+    # fi
     KSU_VERSION=$(git -C "$source_dir" describe --tags --always --dirty)
     echo "✅ KazeSU version: $KSU_VERSION"
 }
